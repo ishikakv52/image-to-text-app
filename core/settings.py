@@ -29,9 +29,7 @@ SECRET_KEY = 'django-insecure-+@pvj(nof3i11^b#p$z(hsro3h_8n1ysag$sy+3_2!#-^@+qvi
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["image-to-text-app-production.up.railway.app",
-    "127.0.0.1",
-    "localhost"]
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
