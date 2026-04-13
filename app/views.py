@@ -6,9 +6,10 @@ from pdf2image import convert_from_path
 from deep_translator import GoogleTranslator
 from langdetect import detect
 import uuid
-
-pytesseract.pytesseract.tesseract_cmd = '/opt/homebrew/bin/tesseract'
-
+import os
+# pytesseract.pytesseract.tesseract_cmd = '/opt/homebrew/bin/tesseract'
+if os.getenv("RENDER"):
+    pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
 
 def landing(request):
     return render(request, "landing.html")
