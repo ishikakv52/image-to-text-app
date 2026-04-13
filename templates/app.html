@@ -6,6 +6,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&display=swap" rel="stylesheet">
 
 <style>
+    .container {
+    position: relative;
+    z-index: 1;
+}
 body {
     font-family: 'Noto Sans', Arial, sans-serif;
     background: #f5f7fb;
@@ -160,6 +164,31 @@ p {
 
     .left, .right {
         padding: 30px;
+    }
+}
+body {
+    position: relative;
+    overflow: hidden;
+}
+
+/* background dots */
+body::before {
+    content: "";
+    position: absolute;
+    width: 200%;
+    height: 200%;
+    background-image: radial-gradient(#00000010 2px, transparent 2px);
+    background-size: 40px 40px;
+    animation: moveDots 20s linear infinite;
+    z-index: 0;
+}
+
+@keyframes moveDots {
+    from {
+        transform: translate(0, 0);
+    }
+    to {
+        transform: translate(-100px, -100px);
     }
 }
 </style>
