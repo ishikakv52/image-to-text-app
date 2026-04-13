@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>AI Vision</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial;
+    background: radial-gradient(circle at top, #eef2ff, #ffffff);
+    overflow: hidden;
+    transition: 0.6s ease;
+}
+
+/* fade-out effect */
+.fade-out {
+    opacity: 0;
+    transform: scale(1.05);
+}
+
+/* center content */
+.center {
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    position: relative;
+    z-index: 2;
+    text-align: center;
+}
+
+/* title */
+h1 {
+    font-size: 55px;
+    margin: 0;
+    animation: fadeIn 1s ease;
+}
+
+/* subtitle */
+p {
+    color: #555;
+    font-size: 18px;
+    animation: fadeIn 1.5s ease;
+}
+
+/* button */
+a {
+    margin-top: 20px;
+    padding: 14px 28px;
+    background: black;
+    color: white;
+    text-decoration: none;
+    border-radius: 12px;
+    transition: 0.3s;
+    animation: fadeIn 2s ease;
+    display: inline-block;
+}
+
+a:hover {
+    transform: scale(1.08);
+}
+
+/* fade-in animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* floating dots */
+.dot {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background: rgba(0,0,0,0.15);
+    border-radius: 50%;
+    animation: float 6s infinite ease-in-out;
+}
+
+@keyframes float {
+    0% {
+        transform: translateY(0px) translateX(0px);
+        opacity: 0.3;
+    }
+    50% {
+        transform: translateY(-60px) translateX(30px);
+        opacity: 0.9;
+    }
+    100% {
+        transform: translateY(0px) translateX(0px);
+        opacity: 0.3;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="center">
+    <h1>AI OCR Vision</h1>
+    <p>Image → Text → Translation in 22+ Languages</p>
+    <a href="/app/" id="startBtn">Start App</a>
+</div>
+
+<script>
+/* floating dots generator */
+for (let i = 0; i < 60; i++) {
+    let dot = document.createElement("div");
+    dot.className = "dot";
+
+    dot.style.left = Math.random() * 100 + "vw";
+    dot.style.top = Math.random() * 100 + "vh";
+
+    dot.style.animationDuration = (3 + Math.random() * 5) + "s";
+    dot.style.opacity = Math.random();
+
+    document.body.appendChild(dot);
+}
+
+/* smooth transition on click */
+const btn = document.getElementById("startBtn");
+
+btn.addEventListener("click", function(e) {
+    e.preventDefault();
+
+    document.body.classList.add("fade-out");
+
+    setTimeout(() => {
+        window.location.href = "/app/";
+    }, 600);
+});
+</script>
+
+</body>
+</html>

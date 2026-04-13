@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>OCR App</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+body {
+    font-family: 'Noto Sans', Arial, sans-serif;
+    background: #f5f7fb;
+    margin: 0;
+    overflow-x: hidden;
+}
+
+/* page load animation */
+.container {
+    display: flex;
+    height: 100vh;
+    opacity: 0;
+    transform: translateY(20px);
+    animation: pageIn 0.8s ease forwards;
+}
+
+@keyframes pageIn {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* left panel animation */
+.left {
+    flex: 1;
+    background: linear-gradient(135deg, #eef2ff, #ffffff);
+    padding: 60px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    animation: slideLeft 0.8s ease forwards;
+}
+
+@keyframes slideLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-40px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* right panel animation */
+.right {
+    flex: 1;
+    padding: 60px;
+    animation: slideRight 0.8s ease forwards;
+}
+
+@keyframes slideRight {
+    from {
+        opacity: 0;
+        transform: translateX(40px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* card */
+.card {
+    background: white;
+    padding: 25px;
+    border-radius: 18px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+    transition: 0.3s;
+}
+
+.card:hover {
+    transform: scale(1.01);
+}
+
+/* inputs */
+input, select {
+    width: 100%;
+    padding: 12px;
+    margin-top: 10px;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    outline: none;
+    transition: 0.3s;
+}
+
+input:focus, select:focus {
+    border-color: black;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+/* buttons */
+button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 10px;
+    background: black;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+button:hover {
+    transform: scale(1.03);
+}
+
+/* copy button */
+.copy-btn {
+    width: auto;
+    padding: 8px 14px;
+    margin-top: 8px;
+    margin-left: 10px;
+    background: #222;
+}
+
+/* text fade-in */
+h3, p {
+    opacity: 0;
+    animation: fadeIn 1s ease forwards;
+}
+
+h3:nth-of-type(1) { animation-delay: 0.5s; }
+h3:nth-of-type(2) { animation-delay: 0.7s; }
+
+p {
+    animation-delay: 0.9s;
+}
+
+@keyframes fadeIn {
+    to {
+        opacity: 1;
+    }
+}
+
+/* result boxes */
+p {
+    background: #f9fafc;
+    padding: 10px;
+    border-radius: 10px;
+    min-height: 40px;
+}
+
+/* responsive */
+@media (max-width: 900px) {
+    .container {
+        flex-direction: column;
+        height: auto;
+    }
+
+    .left, .right {
+        padding: 30px;
+    }
+}
+</style>
+
+<script>
+function copyToClipboard(elementId) {
+    const text = document.getElementById(elementId).innerText;
+    navigator.clipboard.writeText(text).then(() => {
+        alert('Text copied to clipboard!');
+    }).catch(err => {
+        console.error('Failed to copy: ', err);
+    });
+}
+</script>
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <!-- LEFT -->
+    <div class="left">
+        <h1>OCR + AI Translate</h1>
+        <p>Upload image and extract text instantly using AI</p>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="right">
+
+        <div class="card">
+
+            <form method="POST" action="/upload/" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <input type="file" name="image">
+
+                <select name="language">
+
+    <option value="original">Original</option>
+    <option value="detect">Detect Language</option>
+
+    <option value="en">English</option>
+    <option value="zh">Mandarin Chinese</option>
+    <option value="es">Spanish</option>
+    <option value="hi">Hindi</option>
+    <option value="ar">Arabic</option>
+    <option value="bn">Bengali</option>
+    <option value="pt">Portuguese</option>
+    <option value="ru">Russian</option>
+    <option value="ja">Japanese</option>
+    <option value="pa">Punjabi</option>
+    <option value="de">German</option>
+    <option value="fr">French</option>
+    <option value="ms">Malay</option>
+    <option value="vi">Vietnamese</option>
+    <option value="ko">Korean</option>
+
+    <option value="as">Assamese</option>
+    <option value="doi">Dogri</option>
+    <option value="gu">Gujarati</option>
+    <option value="kn">Kannada</option>
+    <option value="gom">Konkani</option>
+    <option value="mai">Maithili</option>
+    <option value="ml">Malayalam</option>
+    <option value="mni-Mtei">Manipuri</option>
+    <option value="mr">Marathi</option>
+    <option value="ne">Nepali</option>
+    <option value="or">Odia</option>
+    <option value="sa">Sanskrit</option>
+    <option value="sd">Sindhi</option>
+    <option value="ta">Tamil</option>
+    <option value="te">Telugu</option>
+    <option value="ur">Urdu</option>
+
+</select>
+
+                <button type="submit">Process Image</button>
+            </form>
+
+            <hr>
+
+            <h3>Original Text</h3>
+            <p id="original-text">{{ text }}</p>
+            <button class="copy-btn" onclick="copyToClipboard('original-text')">Copy</button>
+
+            <h3>Converted Text</h3>
+            <p id="converted-text">{{ translated_text }}</p>
+            <button class="copy-btn" onclick="copyToClipboard('converted-text')">Copy</button>
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>
