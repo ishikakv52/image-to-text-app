@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from PIL import Image
+from PIL import Image, ImageFilter, ImageEnhance
 import pytesseract
 from pdf2image import convert_from_bytes
 from deep_translator import GoogleTranslator
@@ -15,36 +15,147 @@ import re
 if os.getenv("RENDER"):
     pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
 
-def normalize_ocr_token(token):
-    token = token.replace('\\', '')
-    token = token.replace('/', '')
-    token = token.replace('|', 'I')
-    token = token.replace('“', '"').replace('”', '"').replace('‘', "'").replace('’', "'")
-    token = token.replace('©', 'o').replace('®', 'o')
-    if any(c.isalpha() for c in token):
-        token = token.replace('0', 'O')
-        token = token.replace('1', 'l')
-        token = token.replace('5', 'S')
-        token = token.replace('6', 'G')
-    token = token.replace('rn', 'm')
-    token = token.replace('vv', 'w')
-    return token
+def extract_handwritten_text(image):
+    """
+    Simple and reliable handwritten text extraction
+    """
+    try:
+        # Convert to grayscale
+        if isinstance(image, Image.Image):
+            gray = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2GRAY)
+        else:
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-def clean_ocr_text(text):
+        # Simple preprocessing: threshold + morphology
+        _, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+        # Clean up noise
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
+        cleaned = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
+
+        # Convert back to PIL
+        processed_image = Image.fromarray(cleaned)
+
+        # Extract text with basic config
+        text = pytesseract.image_to_string(
+            processed_image,
+            config='--psm 6 --oem 3 -l eng'
+        )
+
+        if text.strip():
+            return clean_handwriting_text(text.strip())
+
+        # Fallback: try with original image
+        text = pytesseract.image_to_string(
+            image,
+            config='--psm 3 --oem 3 -l eng'
+        )
+
+        return clean_handwriting_text(text.strip()) if text.strip() else "No text detected. Please ensure the image is clear and contains readable text."
+
+    except Exception as e:
+        return f"Error: {str(e)}"
+    """
+    Simple and reliable handwritten text extraction
+    """
+    try:
+        # Convert to grayscale
+        if isinstance(image, Image.Image):
+            gray = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2GRAY)
+        else:
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+        # Simple preprocessing: threshold + morphology
+        _, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+        # Clean up noise
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
+        cleaned = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
+
+        # Convert back to PIL
+        processed_image = Image.fromarray(cleaned)
+
+        # Extract text with basic config
+        text = pytesseract.image_to_string(
+            processed_image,
+            config='--psm 6 --oem 3 -l eng'
+        )
+
+        if text.strip():
+            return clean_handwriting_text(text.strip())
+
+        # Fallback: try with original image
+        text = pytesseract.image_to_string(
+            image,
+            config='--psm 3 --oem 3 -l eng'
+        )
+
+        return clean_handwriting_text(text.strip()) if text.strip() else "No text detected. Please ensure the image is clear and contains readable text."
+
+    except Exception as e:
+        return f"Error: {str(e)}"
+
+def clean_handwriting_text(text):
+    """
+    Clean and normalize handwritten OCR text with handwriting-specific fixes
+    """
     if not text:
         return text
-    text = re.sub(r'\|+', 'I', text)
-    text = re.sub(r'\\+', '', text)
-    text = re.sub(r'(?<=\w)-\n(?=\w)', '', text)
+
+    # Remove excessive whitespace and newlines
+    text = re.sub(r'\n\s*\n', '\n', text)
     text = re.sub(r'\s+', ' ', text)
-    tokens = re.split(r'([\W_]+)', text)
-    cleaned = []
-    for token in tokens:
-        if token and re.match(r'^[A-Za-z]+$', token):
-            cleaned.append(normalize_ocr_token(token))
-        else:
-            cleaned.append(token)
-    return ''.join(cleaned).strip()
+
+    # Common OCR fixes for handwriting
+    text = text.replace('\\', '')
+    text = text.replace('|', 'I')
+    text = text.replace('/', '')
+    text = text.replace('©', 'o')
+    text = text.replace('®', 'o')
+    text = text.replace('™', 'tm')
+
+    # Fix common letter confusions in handwriting
+    text = re.sub(r'\b1\b', 'I', text)  # 1 -> I
+    text = re.sub(r'\b0\b', 'O', text)  # 0 -> O
+    text = re.sub(r'\b5\b', 'S', text)  # 5 -> S
+    text = re.sub(r'\b6\b', 'G', text)  # 6 -> G
+    text = re.sub(r'\b8\b', 'B', text)  # 8 -> B
+    text = re.sub(r'\b2\b', 'Z', text)  # 2 -> Z
+    text = re.sub(r'\b3\b', 'E', text)  # 3 -> E
+    text = re.sub(r'\b4\b', 'A', text)  # 4 -> A
+    text = re.sub(r'\b7\b', 'T', text)  # 7 -> T
+    text = re.sub(r'\b9\b', 'g', text)  # 9 -> g
+
+    # Fix common word fragments and letter combinations
+    text = re.sub(r'\bth(\w)', r'th\1', text)  # the -> the
+    text = re.sub(r'\ban(\w)', r'an\1', text)  # and -> and
+    text = re.sub(r'\bin(\w)', r'in\1', text)  # ing -> ing
+    text = re.sub(r'\ber(\w)', r'er\1', text)  # er -> er
+    text = re.sub(r'\bre(\w)', r're\1', text)  # re -> re
+
+    # Fix common handwriting mistakes
+    text = re.sub(r'\brn\b', 'm', text)  # rn -> m
+    text = re.sub(r'\bvv\b', 'w', text)  # vv -> w
+    text = re.sub(r'\bll\b', 'll', text)  # ll -> ll (keep as is)
+    text = re.sub(r'\btt\b', 'tt', text)  # tt -> tt (keep as is)
+
+    # Fix punctuation issues
+    text = re.sub(r'([a-zA-Z])(\.)([a-zA-Z])', r'\1. \3', text)  # Add space after period
+    text = re.sub(r'([a-zA-Z])(,)([a-zA-Z])', r'\1, \3', text)  # Add space after comma
+
+    # Remove isolated punctuation at line starts/ends
+    text = re.sub(r'^\W+', '', text, flags=re.MULTILINE)
+    text = re.sub(r'\W+$', '', text, flags=re.MULTILINE)
+
+    # Capitalize first letter of sentences
+    sentences = re.split(r'(?<=[.!?])\s+', text)
+    capitalized_sentences = []
+    for sentence in sentences:
+        if sentence.strip():
+            capitalized_sentences.append(sentence.strip().capitalize())
+    text = '. '.join(capitalized_sentences)
+
+    return text.strip()
 
 def deskew_image(image_cv):
     """
@@ -94,27 +205,19 @@ def preprocess_handwritten_image(image):
 
 def extract_text_from_image(image, is_handwritten=False):
     """
-    Extract text from image with support for handwritten text using a faster Tesseract pipeline
+    Extract text from image with support for handwritten text using advanced methods
     """
     try:
         if is_handwritten:
-            processed_image = preprocess_handwritten_image(image)
-            raw_text = pytesseract.image_to_string(
-                image,
-                config='--psm 3 --oem 3 -l eng'
-            )
-            processed_text = pytesseract.image_to_string(
-                processed_image,
-                config='--psm 6 --oem 1 -l eng'
-            )
-            text = processed_text if len(processed_text.strip()) >= len(raw_text.strip()) else raw_text
+            # Use specialized handwritten text extraction
+            return extract_handwritten_text(image)
         else:
+            # Standard OCR for printed text
             text = pytesseract.image_to_string(
                 image,
                 config='--psm 3 --oem 3 -l eng'
             )
-        
-        return clean_ocr_text(text.strip()) if text else ""
+            return clean_handwriting_text(text.strip()) if text else ""
     except Exception as e:
         return f"Error: {str(e)}"
 
